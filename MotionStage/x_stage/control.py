@@ -1,6 +1,8 @@
 import numpy as np
 import serial
 import argparse
+import os
+import sys
 
 def parsing():
     parser = argparse.ArgumentParser()
@@ -8,7 +10,8 @@ def parsing():
     args = parser.parse_args()
     return args
 
-dir = '/home/pi/TB_SetupManager/MotionStage/x_stage/'
+# dir = os.environ['HOME'] + '/TB_SetupManager/MotionStage/x_stage/'
+dir = os.path.dirname(sys.argv[0]) + '/'
 calibration_data = dir+'calibration_data.txt'
 calibration = dir+'calibration.txt'
 USB_port = '/dev/ttyUSB0'
