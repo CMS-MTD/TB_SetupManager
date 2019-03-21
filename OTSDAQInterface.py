@@ -1,4 +1,5 @@
-import socket
+import sys
 
 if __name__ == '__main__':
-	pass
+	print 'Finally python'
+	print sys.argv[1]

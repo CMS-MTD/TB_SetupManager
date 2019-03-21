@@ -6,6 +6,7 @@
 #include <cstring>
 #include <cstdlib>
 #include <vector>
+#include <regex>
 #include <map>
 #include <fstream>
 
@@ -21,39 +22,57 @@
 #include <fcntl.h>
 #include <ctype.h>
 
+using namespace std;
+
 
 #define THIS_IP            "131.215.112.172"
-#define COMMUNICATION_PORT "10003"             // the port on ZedBoard for communicating with XDAQ
-#define STREAMING_PORT     "10001"             // the port on ZedBoard for streaming to XDAQ
-#define DESTINATION_IP     "131.215.112.188"  // the IP for the destination of the datastream
-#define DESTINATION_PORT   10003              // the port for the destination of the datastream 47003
+#define COMMUNICATION_PORT "10001"             // the port for communicating with XDAQ
 #define MAXBUFLEN          1492
 
 
 //========================================================================================================================
 // get sockaddr, IPv4 or IPv6:
-void *get_in_addr(struct sockaddr *sa)
-{
-	if (sa->sa_family == AF_INET) {
-		return &(((struct sockaddr_in*)sa)->sin_addr);
-	}
+// void *get_in_addr(struct sockaddr *sa)
+// {
+// 	if (sa->sa_family == AF_INET) {
+// 		return &(((struct sockaddr_in*)sa)->sin_addr);
+// 	}
+//
+// 	return &(((struct sockaddr_in6*)sa)->sin6_addr);
+// }
 
-	return &(((struct sockaddr_in6*)sa)->sin6_addr);
+string getIPAddress(){
+	system("ifconfig | grep -A 1 eth0 | grep ine > .tmp_IP.txt");
+	string line;
+  ifstream myfile (".tmp_IP.txt");
+  if ( !getline (myfile,line) ) {
+		cout << "ifconfig error\n";
+		exit(0);
+	}
+  myfile.close();
+
+	string result;
+  regex re("inet [0-9\\.]+");
+  smatch match;
+  if (regex_search(line, match, re)) {
+    result = match.str(0);
+		result = result.substr(5, result.length()-5);
+  }
+	else {
+    cout << "IP adress not found" << endl;
+		exit(0);
+  }
+
+	return result;
 }
 
 //========================================================================================================================
 int makeSocket(const char* ip, const char* port, struct addrinfo*& addressInfo)
 {
-  std::cout << __PRETTY_FUNCTION__ << "Opening socket: " << ip << " port: " << port << std::endl;
+  cout << "Opening socket: " << ip << " port: " << port << endl;
 	int socketId = 0;
 	struct addrinfo hints, *servinfo, *p;
-	//int sendSockfd=0;
 	int rv;
-	//int numbytes;
-	//struct sockaddr_storage their_addr;
-	//char buff[MAXBUFLEN];
-	//socklen_t addr_len;
-	//char s[INET6_ADDRSTRLEN];
 
 	memset(&hints, 0, sizeof hints);
 	//    hints.ai_family   = AF_UNSPEC; // set to AF_INET to force IPv4
@@ -94,7 +113,7 @@ int makeSocket(const char* ip, const char* port, struct addrinfo*& addressInfo)
 //========================================================================================================================
 struct sockaddr_in setupSocketAddress(const char* ip, unsigned int port)
 {
-	//std::cout << __PRETTY_FUNCTION__ << std::endl;
+	//cout << __PRETTY_FUNCTION__ << endl;
 	//network stuff
 	struct sockaddr_in socketAddress;
 	socketAddress.sin_family = AF_INET;// use IPv4 host byte order
@@ -102,7 +121,7 @@ struct sockaddr_in setupSocketAddress(const char* ip, unsigned int port)
 
 	if(inet_aton(ip, &socketAddress.sin_addr) == 0)
 	{
-		std::cout << "FATAL: Invalid IP address " <<  ip << std::endl;
+		cout << "FATAL: Invalid IP address " <<  ip << endl;
 		exit(0);
 	}
 
@@ -111,22 +130,22 @@ struct sockaddr_in setupSocketAddress(const char* ip, unsigned int port)
 }
 
 //========================================================================================================================
-int send(int toSocket, struct sockaddr_in& toAddress, const std::string& buffer)
+int send(int toSocket, struct sockaddr_in& toAddress, const string& buffer)
 {
-	//   std::cout << "Socket Descriptor #: " << toSocket
-	// 	    << " ip: " << std::hex << toAddress.sin_addr.s_addr << std::dec
+	//   cout << "Socket Descriptor #: " << toSocket
+	// 	    << " ip: " << hex << toAddress.sin_addr.s_addr << dec
 	// 	    << " port: " << ntohs(toAddress.sin_port)
-	// 	    << std::endl;
+	// 	    << endl;
 	if (sendto(toSocket, buffer.c_str(), buffer.size(), 0, (struct sockaddr *)&(toAddress), sizeof(sockaddr_in)) < (int)(buffer.size()))
 	{
-		std::cout << "Error writing buffer" << std::endl;
+		cout << "Error writing buffer" << endl;
 		return -1;
 	}
 	return 0;
 }
 
 //========================================================================================================================
-int receiveAndAcknowledge(int fromSocket, struct sockaddr_in& fromAddress, std::string& buffer)
+int receiveAndAcknowledge(int fromSocket, struct sockaddr_in& fromAddress, string& buffer)
 {
 	struct timeval tv;
 	tv.tv_sec = 0;
@@ -138,7 +157,7 @@ int receiveAndAcknowledge(int fromSocket, struct sockaddr_in& fromAddress, std::
 
 	if(FD_ISSET(fromSocket,&fileDescriptor))
 	{
-		std::string bufferS;
+		string bufferS;
 		//struct sockaddr_in fromAddress;
 		socklen_t addressLength = sizeof(fromAddress);
 		int nOfBytes;
@@ -163,91 +182,32 @@ int receiveAndAcknowledge(int fromSocket, struct sockaddr_in& fromAddress, std::
 
 /////////////////////////////////////////////////////////////////////////
 int main(int argc, char **argv){
+	string this_IP = getIPAddress();
 
-	std::cout << "Running Timing crappy stuff :)!" << std::endl;
+	cout << "Listening for connections" << endl;
 
-
-	//LORE
-	/////////////////////
-	// Bind UDP socket //
-	/////////////////////
-
-	//sendSockfd = makeSocket(string("localhost").c_str(),myport,p);
-
-	//struct addrinfo hints, *servinfo;
 	struct addrinfo* p;
-
-	int communicationSocket              = makeSocket(THIS_IP,COMMUNICATION_PORT,p);
-
-	//int streamingSocket                  = makeSocket(THIS_IP,STREAMING_PORT,p);
-	//struct sockaddr_in streamingReceiver = setupSocketAddress(DESTINATION_IP, DESTINATION_PORT);
-
+	int communicationSocket = makeSocket(this_IP.c_str(),COMMUNICATION_PORT,p);
 	struct sockaddr_in messageSender;
 
-	std::string communicationBuffer;
-	//unsigned int data_buffer[32];
-	//END LORE
+	string communicationBuffer;
+	string currentRun;
 
-	//LORE
-	std::string currentRun;
-	//bool running = false;
-
-	std::ofstream runFile;
+	ofstream runFile;
 	while(1)
 	{
 		communicationBuffer = "";
 		if (receiveAndAcknowledge(communicationSocket, messageSender, communicationBuffer) >= 0){
-			std::cout << "Received: " << communicationBuffer << std::endl;
-
-			if (communicationBuffer.substr(0,5) == "START")
-			{
-				currentRun = communicationBuffer.substr(6,communicationBuffer.length()-6);
-				//	running     = true;
-				runFile.open("/tmp/RunFile.txt");
-				runFile << "start";
-				runFile.close();
-				std::string fileName = "/data/DT5742/DT5742_RAW_Run" +  currentRun + ".dat";				
-				std::string command = "cd; cd Desktop/adafruit_sensors; adafruit_sensors";
-
-				system(command.c_str());
-				std::cout << "Run " << currentRun << " started!" << std::endl;
-			}
-			else if (communicationBuffer == "STOP")
-			{
-			  //running = false;
-				runFile.open("/tmp/RunFile.txt");
-				runFile << "stop";
-				runFile.close();
-
-				std::cout << "Run " << currentRun << " stopped!" << std::endl;
-			}
-			else if (communicationBuffer == "PAUSE")
-			{
-			  //running = false;
-			}
-			else if (communicationBuffer == "RESUME")
-			{
-			  //running = true;
-			}
-			else if (communicationBuffer == "CONFIGURE")
-			{
-			  std::cout << "Configuring...don't need to do anything.\n";
-			}
+			cout << "Received: " << communicationBuffer << endl;
+			string cmd = "python /home/pi/TB_SetupManager/OTSDAQInterface.py \"";
+			cmd = cmd + communicationBuffer + "\"";
+			system(cmd.c_str());
 		}
 
-		// if(running)
-		// {
-		// 	std::cout << "I am running!" << std::endl;
-		// 	usleep(1000000);
-
-		// }
 		usleep(1000);
 	}
 
-	// Clean up and exit
 	close(communicationSocket);
-	//close(streamingSocket);
-	//LORE
 
 	return 0;
 }
