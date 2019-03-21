@@ -3,6 +3,7 @@ import serial
 import argparse
 import os
 import sys
+import time
 
 def parsing():
     parser = argparse.ArgumentParser()
@@ -12,6 +13,8 @@ def parsing():
 
 # dir = os.environ['HOME'] + '/TB_SetupManager/MotionStage/x_stage/'
 dir = os.path.dirname(sys.argv[0]) + '/'
+if dir == '/':
+    dir = ''
 calibration_data = dir+'calibration_data.txt'
 calibration = dir+'calibration.txt'
 USB_port = '/dev/ttyUSB0'
@@ -34,6 +37,7 @@ def MoveSteps(N):
     ser.flush()
     ser.write('MR {}\r\n'.format(N))
     ser.close()
+    time.sleep(0.2+abs(N)*16e-7)
 
 def Move_mm(x):
     mm_per_step = np.loadtxt(calibration)
@@ -54,6 +58,7 @@ if __name__ == '__main__':
             Move_mm(-max_play-1.0)
             write_number(dir+'internal_state_position.txt', 0.0)
 
+
         u_pos = float(np.loadtxt(dir+'user_set_position.txt'))
         if u_pos < 0:
             print 'Minimum position is 0. Moving the stave to 0.'
@@ -68,5 +73,7 @@ if __name__ == '__main__':
         else:
             dx = u_pos - i_pos
             if dx != 0:
+                print 'Moving x-stage of {:.1f} mm'.format(dx)
                 Move_mm(dx)
+                print 'Done'
                 write_number(dir+'internal_state_position.txt', u_pos)
