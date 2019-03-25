@@ -4,7 +4,8 @@ import numpy as np
 data_dir = os.environ['HOME'] + '/data/test'
 
 active_systems = [
-	'x_stage'
+	'x_stage',
+	'y_stage'
 ]
 
 def write_conditions_file(conditions, run_number):
@@ -32,5 +33,12 @@ if __name__ == '__main__':
 
 			aux = np.loadtxt(basedir+'/MotionStage/x_stage/internal_state_position.txt')
 			conditions['x_stage'] = aux
+
+		if 'y_stage' in active_systems:
+			cmd = 'python {}/MotionStage/y_stage/control.py update'.format(basedir)
+			os.system(cmd)
+
+			aux = np.loadtxt(basedir+'/MotionStage/y_stage/internal_state_position.txt')
+			conditions['y_stage'] = aux
 
 		write_conditions_file(conditions, int(msg[6:]))
