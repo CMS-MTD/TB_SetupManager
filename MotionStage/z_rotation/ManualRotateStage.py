@@ -25,6 +25,7 @@ if __name__ == '__main__':
     # ser.flush()
     # ser.write('MR {}\r\n'.format(tot_mov))
     # ser.flush()
+    # exit()
 
     GPIO.setmode(GPIO.BCM)
     GPIO.setup(12, GPIO.IN, pull_up_down=GPIO.PUD_UP)
@@ -40,7 +41,9 @@ if __name__ == '__main__':
         moved += np.sign(tot_mov)*steps
 
         dwn_guard = GPIO.input(12)
-        time.sleep(0.01)
+        time.sleep(0.2)
 
     print("stage moved")
+    if tot_mov > 0 and not dwn_guard:
+        print "of a total of {} steps".format(moved)
     ser.close()

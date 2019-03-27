@@ -5,7 +5,8 @@ data_dir = os.environ['HOME'] + '/data/test'
 
 active_systems = [
 	'x_stage',
-	'y_stage'
+	'y_stage',
+	'z_rotation'
 ]
 
 def write_conditions_file(conditions, run_number):
@@ -30,15 +31,19 @@ if __name__ == '__main__':
 		if 'x_stage' in active_systems:
 			cmd = 'python {}/MotionStage/x_stage/control.py update'.format(basedir)
 			os.system(cmd)
-
 			aux = np.loadtxt(basedir+'/MotionStage/x_stage/internal_state_position.txt')
 			conditions['x_stage'] = aux
 
 		if 'y_stage' in active_systems:
 			cmd = 'python {}/MotionStage/y_stage/control.py update'.format(basedir)
 			os.system(cmd)
-
 			aux = np.loadtxt(basedir+'/MotionStage/y_stage/internal_state_position.txt')
 			conditions['y_stage'] = aux
+
+		if 'z_rotation' in active_systems:
+			cmd = 'python {}/MotionStage/z_rotation/control.py update'.format(basedir)
+			os.system(cmd)
+			aux = np.loadtxt(basedir+'/MotionStage/z_rotation/internal_state_position.txt')
+			conditions['z_rotation'] = aux
 
 		write_conditions_file(conditions, int(msg[6:]))
