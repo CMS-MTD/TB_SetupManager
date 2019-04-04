@@ -1,12 +1,15 @@
 import sys, os
+import subprocess
 import numpy as np
+import time
 
 data_dir = os.environ['HOME'] + '/data/test'
 
 active_systems = [
 	'x_stage',
 	'y_stage',
-	'z_rotation'
+	'z_rotation',
+	'AdaUTH21DF', #Box temp and humidity sensor
 ]
 
 def write_conditions_file(conditions, run_number):
@@ -45,5 +48,14 @@ if __name__ == '__main__':
 			os.system(cmd)
 			aux = np.loadtxt(basedir+'/MotionStage/z_rotation/internal_state_position.txt')
 			conditions['z_rotation'] = aux
+
+		if 'AdaUTH21DF' in active_systems:
+			cmd = 'python3 {}/SensorsI2C/AdaUTH21DF/ReadTempHum_AdaUTH21DF.py'.format(basedir)
+			os.system(cmd)
+			aux = np.loadtxt(basedir+'/SensorsI2C/AdaUTH21DF/tmp_reading.txt')
+			if time.time() - aux[0] < 5:
+				conditions['BoxTemp'] = aux[1]
+				conditions['BoxHum'] = aux[2]
+
 
 		write_conditions_file(conditions, int(msg[6:]))
