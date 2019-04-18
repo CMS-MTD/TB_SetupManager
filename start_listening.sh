@@ -1,0 +1,1 @@
+./OTSDAQInterface &> comm.log &

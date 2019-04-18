@@ -76,6 +76,7 @@ def MoveSteps(N, carefull = False):
 def Move_deg(x, carefull = False):
     deg_per_step = np.loadtxt(calibration)
     steps = -1*int(float(x)/deg_per_step)
+    print 'Moving {} steps'.format(steps)
     MoveSteps(steps, carefull)
 
 def reset():
@@ -108,6 +109,6 @@ if __name__ == '__main__':
         ddeg = u_pos - i_pos
         if ddeg != 0:
             print 'Rotating z-axis of {:.1f} deg'.format(ddeg)
-            Move_deg(ddeg)
+            Move_deg(ddeg, False)
             print 'Done'
             write_number(dir+'internal_state_position.txt', u_pos)

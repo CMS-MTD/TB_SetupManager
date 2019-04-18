@@ -3,13 +3,14 @@ import subprocess
 import numpy as np
 import time
 
-data_dir = os.environ['HOME'] + '/data/test'
+data_dir = os.environ['HOME'] + '/data/201904_FNALTB'
 
 active_systems = [
 	'x_stage',
-	'y_stage',
+#	'y_stage',
 	'z_rotation',
 	'AdaUTH21DF', #Box temp and humidity sensor
+	'VoltageSupply'
 ]
 
 def write_conditions_file(conditions, run_number):
@@ -27,7 +28,7 @@ if __name__ == '__main__':
 	if not os.path.isdir(data_dir):
 		os.system('mkdir -p '+ data_dir)
 
-	if 'START' in msg:
+	if 'start' in msg:
 
 		conditions = {}
 
@@ -57,5 +58,12 @@ if __name__ == '__main__':
 				conditions['BoxTemp'] = aux[1]
 				conditions['BoxHum'] = aux[2]
 
+		if 'VoltageSupply' in active_systems:
+			cmd = 'python {}/VoltageSupply/control.py update'.format(basedir)
+			os.system(cmd)
+			for k in ['Bar', 'Box']:
+				conditions[k+'Voltage'] = str(np.loadtxt(basedir+'/VoltageSupply/{}_read_voltage.txt'.format(k), dtype=np.str))
+				conditions[k+'Current'] = str(np.loadtxt(basedir+'/VoltageSupply/{}_read_current.txt'.format(k), dtype=np.str))
 
-		write_conditions_file(conditions, int(msg[6:]))
+
+		write_conditions_file(conditions, int(msg[7:]))

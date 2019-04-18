@@ -21,8 +21,8 @@ def MoveStep(step):
     GPIO.setup(22, GPIO.OUT)  #ms3
 
     #End of line switches
-    GPIO.setup(20, GPIO.IN, pull_up_down=GPIO.PUD_UP)
     GPIO.setup(16, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+    GPIO.setup(20, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
     GPIO.output(4, 0)
     if step > 0:

@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <string>
 #include <iostream>
+#include <ctime>
 #include <cstring>
 #include <cstdlib>
 #include <vector>
@@ -25,7 +26,7 @@
 using namespace std;
 
 
-#define THIS_IP            "131.215.112.172"
+#define THIS_IP            "192.168.133.220"
 #define COMMUNICATION_PORT "10001"             // the port for communicating with XDAQ
 #define MAXBUFLEN          1492
 
@@ -198,7 +199,9 @@ int main(int argc, char **argv){
 	{
 		communicationBuffer = "";
 		if (receiveAndAcknowledge(communicationSocket, messageSender, communicationBuffer) >= 0){
-			cout << "Received: " << communicationBuffer << endl;
+			time_t now = time(0);
+			char* dt = ctime(&now);
+			cout << dt << "Received: " << communicationBuffer << endl << endl;
 			string cmd = "python /home/pi/TB_SetupManager/OTSDAQInterface.py \"";
 			cmd = cmd + communicationBuffer + "\"";
 			system(cmd.c_str());
